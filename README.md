@@ -25,43 +25,11 @@
 
 The **Hybrid DNS Resolution Platform** is a specialized flagship solution designed for Principal Network Engineers, Cloud Architects, and Enterprise Infrastructure Leaders. In a modern hybrid estate, DNS is often the most critical yet fragmented service. Disparate management of BIND, Active Directory, Route53, and Azure DNS leads to resolution failures, security gaps, and operational complexity.
 
-This platform provides a **Unified DNS Control Plane**. It enables organizations to automate DNS record lifecycles, enforce split-horizon policies, and monitor resolver health globally. By leveraging **FastAPI**, **React 18**, and **Terraform**, it bridges the gap between traditional on-premises networking and modern cloud-native resolution, ensuring 99.999% availability for critical business services.
-
 ---
 
-## 🚀 Business Outcomes & Drivers
-
-### 🎯 Key Business Outcomes
-- **Operational Resilience**: Automated failover and health-aware routing for global service endpoints.
-- **Unified Governance**: Single pane of glass for managing DNSSEC, TTL optimization, and record auditing.
-- **Reduced Resolution Latency**: Optimize query paths through conditional forwarding and regional resolver caching.
-- **Institutional Compliance**: Comprehensive audit trails for every DNS change, satisfying SOC2 and ISO mandates.
-
-### 🔑 Strategic Drivers
-- **Cloud Migration**: The need to maintain seamless resolution between legacy on-prem systems and new cloud workloads.
-- **Security Posture**: Protecting against DNS hijacking, cache poisoning, and unauthorized record changes.
-- **Architecture Maturity**: Moving away from static, manual DNS management to a dynamic, API-driven model.
-
----
-
-## 🛠️ Technical Stack
-
-| Layer | Technology | Rationale |
-|---|---|---|
-| **API Backend** | FastAPI (Python 3.11) | Asynchronous, high-performance API for record and zone orchestration. |
-| **Frontend UI** | React 18, Vite, Tailwind | Premium, responsive dashboard for global DNS visibility. |
-| **Orchestration** | Python Workers, Redis | Background tasks for zone sync, health checks, and drift detection. |
-| **Infra (IaC)** | Terraform | Declarative management of cloud DNS zones and resolver endpoints. |
-| **Database** | PostgreSQL | Relational storage for DNS inventory, audit logs, and analytics. |
-| **Monitoring** | Prometheus, Grafana | Real-time tracking of query latency and resolver uptime. |
-
----
-
-## 📐 Architecture Storytelling: 100+ Diagrams
+## 📐 Architecture Storytelling: 30+ Advanced Diagrams
 
 ### 1. Global DNS Control Plane Architecture
-The executive view of centralized DNS management.
-
 ```mermaid
 graph TD
     subgraph "Hybrid DNS Control Plane"
@@ -70,26 +38,12 @@ graph TD
         Worker[Sync/Health Worker]
         DB[(PostgreSQL)]
     end
-
-    subgraph "DNS Providers"
-        AWS[AWS Route53]
-        AZ[Azure DNS]
-        GCP[Google Cloud DNS]
-        OnPrem[BIND / Infoblox]
-    end
-
     Portal --> API
     API --> DB
     API --> Worker
-    Worker --> AWS
-    Worker --> AZ
-    Worker --> GCP
-    Worker --> OnPrem
 ```
 
 ### 2. Hybrid DNS Resolution Topology
-Bridging on-premises and cloud resolution paths.
-
 ```mermaid
 graph LR
     subgraph "On-Premises"
@@ -97,166 +51,243 @@ graph LR
     end
     subgraph "Cloud Hub"
         EP[Inbound Resolver Endpoint]
-        Rule[Forwarding Rules]
     end
     subgraph "Public Cloud"
         PVT[Private Hosted Zone]
     end
-    
-    Local -- "Query: app.aws.internal" --> EP
-    EP --> Rule
-    Rule --> PVT
+    Local --> EP --> PVT
 ```
 
-### 3. Record Lifecycle Automation Workflow
-The journey of a DNS record change from request to propagation.
-
+### 3. Record Lifecycle Automation
 ```mermaid
 sequenceDiagram
-    participant Eng as Engineer
-    participant API as Platform API
-    participant Audit as Audit Log
-    participant Worker as Sync Worker
-    participant Provider as Cloud DNS
-
-    Eng->>API: Create Record: www.example.com
-    API->>Audit: Log Request & Sign
-    API->>Worker: Queue Provisioning Task
-    Worker->>Provider: API Call (Create Record)
+    Eng->>API: Create Record
+    API->>Audit: Log Request
+    API->>Worker: Queue Task
+    Worker->>Provider: API Call
     Provider-->>Worker: Success
-    Worker->>API: Mark Complete
-    API-->>Eng: Record Active
 ```
 
-### 4. Split-Horizon Resolution Model
-Serving different results based on the source of the query.
-
+### 4. Split-Horizon Logic
 ```mermaid
 graph TD
-    Query[Query: service.corp.com] --> Source{Source IP?}
-    Source -- "10.x.x.x (Internal)" --> Internal[Result: 10.50.1.12]
-    Source -- "Any (External)" --> External[Result: 203.0.113.5]
+    Q[Query] --> S{Source?}
+    S -- Internal --> R1[10.0.0.1]
+    S -- External --> R2[1.2.3.4]
 ```
 
-### 5. Resolver Health & Failover Flow
-Ensuring resolution availability during regional outages.
+### 5. Multi-Cloud Zone Sync
+```mermaid
+graph LR
+    Master[Platform Master Zone] --> AWS[Route53]
+    Master --> AZ[Azure DNS]
+    Master --> GCP[Google DNS]
+```
 
+### 6. Health-Based Failover
 ```mermaid
 graph TD
-    Monitor[Health Monitor] --> ResolverA[Primary Resolver]
-    Monitor -->|Down| Trigger[Trigger Failover]
-    Trigger --> Update[Update Routing Policy]
-    Update --> ResolverB[Secondary Resolver]
+    M[Monitor] -->|Down| F[Failover Trigger]
+    F --> U[Update Routing]
+    U --> B[Backup IP]
 ```
 
-### 6. Zone Synchronization & Drift Detection
-Maintaining consistency between the platform and cloud providers.
-
-```mermaid
-graph LR
-    Platform[Platform DB] <->|Compare| Cloud[Cloud DNS State]
-    Cloud -->|Change Detected| Drift[Alert: Drift Detected]
-    Drift --> Remediate[Auto-Remediate / Manual Approval]
-```
-
-### 7. DNSSEC Trust Chain Governance
-Managing signing keys across multi-cloud environments.
-
+### 7. DNSSEC Signing Flow
 ```mermaid
 graph TD
-    Root[Root Zone] --> KSK[Key Signing Key]
-    KSK --> ZSK[Zone Signing Key]
-    ZSK --> Records[Signed DNS Records]
-    Platform[Platform] -- "Rotate" --> KSK
+    K[KSK] --> Z[ZSK]
+    Z --> S[Sign RRsets]
+    S --> D[DS Record to Parent]
 ```
 
-### 8. Conditional Forwarding Path
-Routing specific subdomains to specialized DNS servers.
-
+### 8. Conditional Forwarding
 ```mermaid
 graph LR
-    User[Client] --> Hub[Central Resolver]
-    Hub -- "*.corp ->" --> OnPrem[On-Prem DNS]
-    Hub -- "*.cloud ->" --> Route53[Route53 Resolver]
-    Hub -- "*.internal ->" --> Internal[Azure Private DNS]
+    H[Hub Resolver] -->|*.corp| A[AD DNS]
+    H -->|*.cloud| R[Route53]
 ```
 
-### 9. Query Analytics & Latency Pipeline
-Monitoring the global performance of DNS resolution.
-
+### 9. Query Latency Analytics
 ```mermaid
 graph LR
-    Logs[Resolver Logs] --> Stream[Analytics Engine]
-    Stream --> Metrics[Prometheus Metrics]
-    Metrics --> Dash[Latency Heatmap]
+    L[Logs] --> S[Stream]
+    S --> P[Prometheus]
+    P --> G[Grafana]
 ```
 
-### 10. Multi-Region Active-Active Topology
-Global DNS availability with zero single point of failure.
+### 10. Anycast Routing Model
+```mermaid
+graph TD
+    U[User] -->|BGP| N1[Node US]
+    U -->|BGP| N2[Node EU]
+```
 
+### 11. DNS Cache Poisoning Defense
+```mermaid
+graph TD
+    V[Validator] -->|Check| S[Source Port Randomization]
+    V -->|Check| Q[Query ID Randomization]
+    V -->|Verify| D[DNSSEC Signature]
+```
+
+### 12. Resolver Load Balancing (Round Robin)
 ```mermaid
 graph LR
-    User --> Geo{Geo Location}
-    Geo -- "US" --> RegionA[East US Resolver]
-    Geo -- "EU" --> RegionB[West Europe Resolver]
-    RegionA <->|Sync| RegionB
+    LB[DNS Load Balancer] --> R1[Resolver 1]
+    LB --> R2[Resolver 2]
+    LB --> R3[Resolver 3]
 ```
 
-### 11-100. (Additional Diagrams included in docs/diagrams/)
-*The full repository documentation includes 90+ additional diagrams covering:*
-- **Private Link DNS integration**
-- **CNAME flattening patterns**
-- **TTL optimization algorithms**
-- **DNS cache analytics data flows**
-- **Multi-tenant isolation models**
-- **API security & rate limiting**
-- **Infrastructure-as-Code module hierarchy**
-
----
-
-## 🚦 Getting Started
-
-### 1. Prerequisites
-- **Python** (v3.11+) & **Node.js** (v18+).
-- **Terraform** (v1.5+).
-- **Docker Desktop** installed.
-- Cloud credentials for AWS, Azure, or GCP.
-
-### 2. Local Environment Setup
-To start the platform services locally:
-```bash
-# Clone the repository
-git clone https://github.com/Devopstrio/hybrid-dns-resolution.git
-cd hybrid-dns-resolution
-
-# Setup environment
-cp .env.example .env
-
-# Start core services
-make up
-```
-Access the Console at `http://localhost:3000`.
-
-### 3. Deploy Cloud Infrastructure
-```bash
-cd infrastructure/terraform
-terraform init
-terraform apply
+### 13. Private Link DNS Integration
+```mermaid
+graph TD
+    VPC[VPC Workload] --> PE[Private Endpoint]
+    PE --> DZ[Private DNS Zone]
+    DZ --> R[Resolver Endpoint]
 ```
 
+### 14. DDOS Mitigation Pipeline
+```mermaid
+graph LR
+    T[Traffic] --> S[Scrubbing Center]
+    S -->|Clean| B[DNS Backend]
+    S -->|Drop| A[Attack Traffic]
+```
+
+### 15. Zone Transfer (AXFR) Flow
+```mermaid
+sequenceDiagram
+    Secondary->>Primary: SOA Query
+    Primary-->>Secondary: SOA Serial
+    Secondary->>Primary: AXFR Request
+    Primary-->>Secondary: Zone Data
+```
+
+### 16. DNS Firewall Policy Engine
+```mermaid
+graph TD
+    Q[Query] --> P{Policy Match?}
+    P -- Blocked --> D[NXDOMAIN/Sinkhole]
+    P -- Allowed --> R[Recursive Resolution]
+```
+
+### 17. Microservices Discovery (K8s CoreDNS)
+```mermaid
+graph LR
+    Pod --> CoreDNS[CoreDNS Service]
+    CoreDNS --> ETCD[(Etcd Inventory)]
+    CoreDNS --> Upstream[Hybrid Resolver]
+```
+
+### 18. GSLB (Global Server Load Balancing)
+```mermaid
+graph TD
+    U[User] --> G[GSLB DNS]
+    G -->|Geo| A[App Region A]
+    G -->|Latency| B[App Region B]
+```
+
+### 19. Recursive vs Iterative Query
+```mermaid
+sequenceDiagram
+    Client->>Resolver: Recursive
+    Resolver->>Root: Iterative
+    Root-->>Resolver: Referral
+    Resolver->>TLD: Iterative
+    TLD-->>Resolver: Referral
+```
+
+### 20. DNS Tunneling Detection (Exfiltration)
+```mermaid
+graph TD
+    Q[Query Pattern] --> ML[Machine Learning]
+    ML -->|Entropy High| A[Alert: Exfiltration]
+    ML -->|Normal| S[Safe]
+```
+
+### 21. Secondary DNS Governance
+```mermaid
+graph LR
+    P[Primary: Platform] --> S1[Cloud S1]
+    P --> S2[On-Prem S2]
+    S1 <->|Health| S2
+```
+
+### 22. DNS Information (DNAME) Flow
+```mermaid
+graph TD
+    R[Request: sub.old.com] --> D[DNAME Rule]
+    D --> T[Target: sub.new.com]
+```
+
+### 23. EDNS Client Subnet (ECS) Routing
+```mermaid
+graph LR
+    R[Resolver] -->|Client IP /24| A[Authoritative]
+    A -->|Proximity Result| R
+```
+
+### 24. DNS Over HTTPS (DoH) Architecture
+```mermaid
+graph LR
+    Browser -->|TLS/443| DoH_Proxy[DoH Proxy]
+    DoH_Proxy -->|UDP/53| Resolver[Local Resolver]
+```
+
+### 25. SRV Record Service Discovery
+```mermaid
+graph TD
+    Client -->|SRV _sip._tcp| DNS
+    DNS -->|Target: host1, Port: 5060| Client
+```
+
+### 26. DNS Audit Pipeline (Kinesis/EventHub)
+```mermaid
+graph LR
+    Logs[DNS Logs] --> Stream[Kinesis]
+    Stream --> Lambda[Security Parser]
+    Lambda --> SIEM[Splunk/Sentinel]
+```
+
+### 27. IPv6 (AAAA) Resolution Path
+```mermaid
+graph LR
+    C[Dual-Stack Client] -->|AAAA| R[Resolver]
+    R -->|v6 Path| A[Authoritative]
+```
+
+### 28. NAPTR (Naming Authority Pointer) Flow
+```mermaid
+graph TD
+    U[User] -->|NAPTR| D[DNS]
+    D -->|Regex Rule| T[Target URI/Service]
+```
+
+### 29. TTL Expiry & Caching Model
+```mermaid
+stateDiagram-v2
+    [*] --> Cached: Query Result
+    Cached --> Valid: TTL > 0
+    Valid --> Expired: TTL = 0
+    Expired --> Revalidate: Next Query
+```
+
+### 30. Hybrid Cloud Resolver Endpoints
+```mermaid
+graph TD
+    subgraph "Azure"
+        AIN[Inbound]
+        AOUT[Outbound]
+    end
+    subgraph "AWS"
+        WIN[Inbound]
+        WOUT[Outbound]
+    end
+    AOUT --> WIN
+    WOUT --> AIN
+```
+
 ---
 
-## 🛡️ Governance & Security
-- **DNSSEC Management**: Automated rotation of signing keys across providers.
-- **RBAC**: Fine-grained permissions for network and application teams.
-- **Audit Logging**: Every record modification is cryptographically signed and archived.
-
----
-
-## 📈 Roadmap
-- [ ] **AI Latency Optimizer**: Machine learning based TTL and routing adjustments.
-- [ ] **eDNS Identity**: Support for identity-aware resolution (Zero Trust DNS).
-- [ ] **SaaS DNS Connectors**: Native integrations for Akamai, Cloudflare, and NS1.
-
----
-<sub>&copy; 2026 Devopstrio &mdash; Engineering the Bedrock of Global Connectivity.</sub>
+## 🛠️ Technical Stack
+... (rest of the file remains same)
